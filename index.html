@@ -750,7 +750,47 @@
                 ]
             }
         };
+const WP_STORAGE_KEY = 'safety_work_permit_state_v1';
 
+function loadWpState() {
+  try {
+    const raw = localStorage.getItem(WP_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    console.warn('loadWpState error:', e);
+    return null;
+  }
+}
+
+function saveWpState(extraState = {}) {
+  try {
+    const prev = loadWpState() || {};
+    const nextState = {
+      ...prev,
+      currentRole,
+      safetyAlertCount,
+      selectedWpId,
+      zoneActiveContractors,
+      permitDatabase,
+      ...extraState
+    };
+    localStorage.setItem(WP_STORAGE_KEY, JSON.stringify(nextState));
+  } catch (e) {
+    console.warn('saveWpState error:', e);
+  }
+}
+
+(function applySavedWpState() {
+  const saved = loadWpState();
+  if (!saved) return;
+  if (saved.currentRole) currentRole = saved.currentRole;
+  if (typeof saved.safetyAlertCount === 'number') safetyAlertCount = saved.safetyAlertCount;
+  if (typeof saved.selectedWpId === 'string') selectedWpId = saved.selectedWpId;
+  if (saved.zoneActiveContractors) zoneActiveContractors = saved.zoneActiveContractors;
+  if (saved.permitDatabase && Object.keys(saved.permitDatabase).length > 0) {
+    permitDatabase = saved.permitDatabase;
+  }
+})();
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             const target = document.getElementById('tab-' + tabId);
@@ -851,6 +891,7 @@
             alert('🚨 แจ้งเหตุฉุกเฉินสำเร็จ! ระบบเปิดสัญญาณเตือนภัยและส่งแจ้งเตือนเข้า LINE OA เรียบร้อย');
             closeAlertModal();
             document.getElementById('emergency-desc').value = '';
+        saveWpState();
         }
 
         function resolveEmergency(alertRowId, zoneCode) {
@@ -862,6 +903,7 @@
                 if(statusCell) {
                     statusCell.innerHTML = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-bold">✅ ระงับเหตุ / ปลอดภัยแล้ว</span>`;
                 }
+            saveWpState();
             }
 
             const zoneEl = document.getElementById(zoneCode);
@@ -926,6 +968,7 @@
                     isPdf: false,
                     url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80'
                 });
+            saveWpState();
             }
 
             permitDatabase[wpId] = {
@@ -1001,6 +1044,8 @@
             alert('ส่งคำขอ Work Permit และแจ้งเตือนเข้า LINE OA สำเร็จ!');
             document.getElementById('permit-form').reset();
             switchTab('dashboard');
+        saveWpState();
+        saveWpState();
         }
 
         function openDetailModal(wpId) {
