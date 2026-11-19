@@ -773,6 +773,7 @@ function saveWpState(extraState = {}) {
       permitTableHtml: document.getElementById('permit-table-body')?.innerHTML || '',
       approvalContainerHtml: document.getElementById('approval-container')?.innerHTML || '',
       emergencyTableHtml: document.getElementById('emergency-table-body')?.innerHTML || '',
+      archiveTableHtml: document.getElementById('archive-table-body')?.innerHTML || '',
       stats: {
         badgeCount: document.getElementById('badge-count')?.innerText || '0',
         statPending: document.getElementById('stat-pending')?.innerText || '0',
@@ -786,6 +787,46 @@ function saveWpState(extraState = {}) {
     console.warn('saveWpState error:', e);
   }
 }
+
+function restoreAllHtmlAndStats() {
+  const saved = loadWpState();
+  if (!saved) return;
+
+  if (saved.currentRole) currentRole = saved.currentRole;
+  if (typeof saved.safetyAlertCount === 'number') {
+    safetyAlertCount = saved.safetyAlertCount;
+    const alertStatEl = document.getElementById('stat-safety-alert');
+    if (alertStatEl) alertStatEl.innerText = safetyAlertCount;
+  }
+  if (typeof saved.selectedWpId === 'string') selectedWpId = saved.selectedWpId;
+  if (saved.zoneActiveContractors) zoneActiveContractors = saved.zoneActiveContractors;
+  if (saved.permitDatabase) permitDatabase = saved.permitDatabase;
+
+  if (saved.permitTableHtml) {
+    const tbody = document.getElementById('permit-table-body');
+    if (tbody) tbody.innerHTML = saved.permitTableHtml;
+  }
+  if (saved.approvalContainerHtml) {
+    const appBox = document.getElementById('approval-container');
+    if (appBox) appBox.innerHTML = saved.approvalContainerHtml;
+  }
+  if (saved.emergencyTableHtml) {
+    const emTbody = document.getElementById('emergency-table-body');
+    if (emTbody) emTbody.innerHTML = saved.emergencyTableHtml;
+  }
+  if (saved.archiveTableHtml) {
+    const archTbody = document.getElementById('archive-table-body');
+    if (archTbody) archTbody.innerHTML = saved.archiveTableHtml;
+  }
+  if (saved.stats) {
+    if (document.getElementById('badge-count')) document.getElementById('badge-count').innerText = saved.stats.badgeCount;
+    if (document.getElementById('stat-pending')) document.getElementById('stat-pending').innerText = saved.stats.statPending;
+    if (document.getElementById('stat-active')) document.getElementById('stat-active').innerText = saved.stats.statActive;
+    if (document.getElementById('stat-completed')) document.getElementById('stat-completed').innerText = saved.stats.statCompleted;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', restoreAllHtmlAndStats);
 
 
 function restoreAllHtmlAndStats() {
@@ -891,6 +932,7 @@ window.addEventListener('DOMContentLoaded', restoreAllHtmlAndStats);
             if(zoneEl) {
                 zoneEl.className = "bg-rose-950 border-2 border-rose-600 p-4 rounded-xl relative shadow-xl transition-all animate-pulse";
                 zoneEl.querySelector('.status-text').innerHTML = `<strong class="text-rose-300">🚨 เกิดเหตุ: ${type}</strong>`;
+            saveWpState();
             }
 
             const emergencyTbody = document.getElementById('emergency-table-body');
