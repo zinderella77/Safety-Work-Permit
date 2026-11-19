@@ -1113,6 +1113,7 @@ window.addEventListener('DOMContentLoaded', restoreAllHtmlAndStats);
             alert(`✅ ต่ออายุใบอนุญาต ${selectedWpId} สำเร็จ! เป็น: ${newDate}`);
             closeDetailModal();
             document.getElementById('extend-date-input').value = '';
+        saveWpState();
         }
 
         function approveDirectly(rowId, actionDivId, wpId, cardId) {
@@ -1140,6 +1141,7 @@ window.addEventListener('DOMContentLoaded', restoreAllHtmlAndStats);
                     จบงาน / คืนพื้นที่
                 </button>
             `;
+        saveWpState();
         }
 
         function updateZoneDisplay(zoneCode) {
@@ -1200,6 +1202,7 @@ window.addEventListener('DOMContentLoaded', restoreAllHtmlAndStats);
                     </td>
                 </tr>
             `);
+        saveWpState();
         }
 
         function openPermitPdfModal(wpId) {
