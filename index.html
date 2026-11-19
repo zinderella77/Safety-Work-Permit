@@ -1,0 +1,1250 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plant Safety & Contractor Control - ระบบควบคุมงานซ่อมบำรุงและผู้รับเหมาโรงงาน</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&family=Sarabun:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/js/all.min.js"></script>
+    <style>
+        body { font-family: 'Prompt', sans-serif; }
+        .formal-doc { font-family: 'Sarabun', sans-serif; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .a4-sheet {
+            width: 210mm;
+            min-height: 297mm;
+            margin: 0 auto 20px auto;
+            background: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+            padding: 15mm 18mm;
+            box-sizing: border-box;
+            position: relative;
+        }
+        @page {
+            size: A4 portrait;
+            margin: 8mm;
+        }
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+
+            .print-active,
+            .print-active * {
+                visibility: visible;
+            }
+
+            .print-active {
+                position: fixed !important;
+                left: 0 !important;
+                top: 0 !important;
+                width: 100% !important;
+                max-width: none !important;
+                height: auto !important;
+                max-height: none !important;
+                overflow: visible !important;
+                margin: 0 !important;
+                padding: 0 !important;
+                background: #ffffff !important;
+                box-shadow: none !important;
+                transform: none !important;
+                z-index: 99999 !important;
+            }
+
+            .print-active .a4-sheet,
+            .a4-sheet.print-active {
+                width: 100% !important;
+                min-height: auto !important;
+                max-height: none !important;
+                margin: 0 !important;
+                padding: 6mm 8mm !important;
+                box-shadow: none !important;
+                page-break-after: always;
+                break-after: page;
+            }
+
+            .print-active .a4-sheet:last-child,
+            .a4-sheet.print-active:last-child {
+                page-break-after: auto;
+                break-after: auto;
+            }
+
+            .no-print {
+                display: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-800 antialiased">
+
+    <!-- Top Navigation -->
+    <header class="bg-gradient-to-r from-slate-900 via-blue-900 to-indigo-900 text-white shadow-lg sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 py-3 flex flex-col md:flex-row justify-between items-center">
+            <div class="flex items-center space-x-3 mb-2 md:mb-0">
+                <div class="bg-amber-500 text-slate-900 p-2.5 rounded-xl shadow-md">
+                    <i class="fa-solid fa-industry text-2xl font-bold"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold tracking-wide">Plant Safety & Contractor Control</h1>
+                    <p class="text-xs text-slate-300">ระบบจัดการผู้รับเหมาและงานซ่อมบำรุงโรงงานดิจิทัล (Safety Management System)</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div id="role-badge" class="bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center shadow-inner">
+                    <i class="fa-solid fa-user-shield mr-1.5"></i>
+                    <span>จป.วิชาชีพ (Safety Officer): <strong class="underline ml-1">ณิชาภัทร หมัดพวง</strong></span>
+                </div>
+                <button onclick="toggleRole()" class="bg-amber-400 hover:bg-amber-500 text-slate-900 font-semibold px-4 py-2 rounded-xl text-xs transition shadow flex items-center cursor-pointer">
+                    <i class="fa-solid fa-rotate mr-1.5"></i> สลับมุมมอง (<span id="role-text">Contractor</span>)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <main class="max-w-7xl mx-auto px-4 py-6 grid grid-cols-1 md:grid-cols-4 gap-6">
+        
+        <!-- Sidebar Menu -->
+        <aside class="md:col-span-1 bg-white p-4 rounded-2xl shadow-sm border border-slate-200 h-fit">
+            <h2 class="text-xs font-semibold text-slate-400 uppercase tracking-wider mb-3 px-2">เมนูระบบโรงงาน</h2>
+            <nav class="space-y-1" id="sidebar-nav">
+                <button onclick="switchTab('dashboard')" id="nav-dashboard" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-blue-700 bg-blue-50 transition cursor-pointer">
+                    <i class="fa-solid fa-chart-pie w-6"></i> แดชบอร์ดภาพรวมโรงงาน
+                </button>
+                <button onclick="switchTab('new-permit')" id="nav-new-permit" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                    <i class="fa-solid fa-file-circle-plus w-6"></i> ขอ Work Permit & ตรวจแรงงาน
+                </button>
+                <button onclick="switchTab('approval')" id="nav-approval" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 transition justify-between cursor-pointer safety-only">
+                    <span class="flex items-center"><i class="fa-solid fa-list-check w-6"></i> พิจารณาคำขอ (จป.)</span>
+                    <span class="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full" id="badge-count">1</span>
+                </button>
+                <button onclick="switchTab('tracking')" id="nav-tracking" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                    <i class="fa-solid fa-map-location-dot w-6"></i> แผนผังติดตามหน้างาน (Plant Map)
+                </button>
+                <button onclick="switchTab('archive')" id="nav-archive" class="w-full flex items-center px-4 py-3 text-sm font-medium rounded-xl text-slate-600 hover:bg-slate-50 transition cursor-pointer safety-only">
+                    <i class="fa-solid fa-box-archive w-6"></i> คลังเอกสารย้อนหลัง (Archive)
+                </button>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <section class="md:col-span-3 space-y-6">
+            
+            <!-- TAB 1: DASHBOARD -->
+            <div id="tab-dashboard" class="tab-content active space-y-6">
+                <div class="bg-gradient-to-r from-blue-900 to-slate-900 rounded-2xl p-6 text-white shadow-md">
+                    <h2 class="text-xl font-bold mb-1">ระบบควบคุมความปลอดภัยผู้รับเหมาและงานซ่อมบำรุงโรงงาน</h2>
+                    <p class="text-sm text-blue-100 mb-4">คัดกรองแรงงาน ตรวจสอบเอกสาร และควบคุมความปลอดภัยในพื้นที่ปฏิบัติงานอันตรายแบบเรียลไทม์</p>
+                    <div class="flex flex-wrap gap-3">
+                        <button onclick="switchTab('new-permit')" class="bg-amber-400 hover:bg-amber-500 text-slate-900 text-sm font-semibold px-4 py-2 rounded-xl transition shadow cursor-pointer">
+                            <i class="fa-solid fa-plus mr-1.5"></i> ขอใบอนุญาตทำงาน (Work Permit)
+                        </button>
+                        <button onclick="switchTab('tracking')" class="bg-white/10 hover:bg-white/20 text-white text-sm font-semibold px-4 py-2 rounded-xl transition border border-white/20 cursor-pointer">
+                            <i class="fa-solid fa-map-location-dot mr-1.5"></i> ดูแผนผังจุดทำงานในโรงงาน (6 โซน)
+                        </button>
+                        <button onclick="openAlertModal()" class="bg-rose-600 hover:bg-rose-700 text-white text-sm font-semibold px-4 py-2 rounded-xl transition shadow cursor-pointer animate-pulse">
+                            <i class="fa-solid fa-triangle-exclamation mr-1.5"></i> แจ้งเหตุฉุกเฉิน / อุบัติเหตุ
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Stats Grid -->
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-medium">รออนุมัติ (Pending)</span>
+                            <i class="fa-solid fa-clock-rotate-left text-amber-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-slate-800" id="stat-pending">1</div>
+                        <span class="text-xs text-amber-600 font-medium">รอ จป. ตรวจสอบเอกสาร</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-medium">ผู้รับเหมาในพื้นที่</span>
+                            <i class="fa-solid fa-helmet-safety text-blue-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-slate-800" id="stat-progress">0</div>
+                        <span class="text-xs text-blue-600 font-medium">กำลังปฏิบัติงานตามเงื่อนไข</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-medium">งานเสร็จสิ้น</span>
+                            <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-slate-800" id="stat-completed">0</div>
+                        <span class="text-xs text-emerald-600 font-medium">คืนพื้นที่เรียบร้อย</span>
+                    </div>
+                    <div class="bg-white p-4 rounded-2xl shadow-sm border border-slate-200">
+                        <div class="flex items-center justify-between text-slate-500 mb-2">
+                            <span class="text-xs font-medium">แจ้งเตือนความปลอดภัย</span>
+                            <i class="fa-solid fa-triangle-exclamation text-rose-500"></i>
+                        </div>
+                        <div class="text-2xl font-bold text-rose-600" id="stat-safety-alert">0</div>
+                        <span class="text-xs text-rose-600 font-medium">เหตุฉุกเฉิน / อุบัติเหตุ</span>
+                    </div>
+                </div>
+
+                <!-- Emergency Log Table -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-rose-200">
+                    <h3 class="text-sm font-bold text-rose-700 mb-3 flex items-center">
+                        <i class="fa-solid fa-bell mr-2 animate-bounce"></i> บันทึกรายการแจ้งเหตุฉุกเฉิน / อุบัติเหตุ (Emergency Log)
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-slate-400 text-xs">
+                                    <th class="pb-3 font-semibold">เวลาที่แจ้ง</th>
+                                    <th class="pb-3 font-semibold">สถานที่เกิดเหตุ (โซน)</th>
+                                    <th class="pb-3 font-semibold">ลักษณะเหตุฉุกเฉิน</th>
+                                    <th class="pb-3 font-semibold">รายละเอียดเพิ่มเติม</th>
+                                    <th class="pb-3 font-semibold">สถานะการช่วยเหลือ / จัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="emergency-table-body" class="divide-y divide-slate-100 text-slate-600">
+                                <tr>
+                                    <td colspan="5" class="py-4 text-center text-slate-400 text-xs italic">ยังไม่มีการแจ้งเหตุฉุกเฉินในระบบ</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Recent Activity Table -->
+                <div class="bg-white rounded-2xl p-5 shadow-sm border border-slate-200">
+                    <h3 class="text-sm font-bold text-slate-800 mb-3 flex items-center">
+                        <i class="fa-solid fa-list text-blue-600 mr-2"></i> รายการคำขอ Work Permit ผู้รับเหมาล่าสุด & จัดการสถานะ
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left text-sm">
+                            <thead>
+                                <tr class="border-b border-slate-100 text-slate-400 text-xs">
+                                    <th class="pb-3 font-semibold">รหัส (ID)</th>
+                                    <th class="pb-3 font-semibold">บริษัทผู้รับเหมา / ประเภทงาน</th>
+                                    <th class="pb-3 font-semibold">วันเริ่มต้น - วันหมดอายุ</th>
+                                    <th class="pb-3 font-semibold">สถานที่ในโรงงาน</th>
+                                    <th class="pb-3 font-semibold">สถานะและการจัดการ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="permit-table-body" class="divide-y divide-slate-100 text-slate-600">
+                                <tr id="row-wp-1">
+                                    <td class="py-3 font-medium text-slate-800">WP-FAC-001</td>
+                                    <td class="py-3">
+                                        <div class="font-semibold text-slate-800">บจก. เอ็นจิเนียริ่ง เซอร์วิส</div>
+                                        <span class="bg-rose-50 text-rose-700 px-2 py-0.5 rounded text-xs font-semibold">🔥 งานร้อน (Hot Work)</span>
+                                    </td>
+                                    <td class="py-3 text-xs">19/11/2026 ถึง <strong class="text-rose-600">20/11/2026</strong><br><span class="text-emerald-600">✓ แนบเอกสารแล้ว</span></td>
+                                    <td class="py-3 text-xs">โซน B: อาคารผลิต Boiler</td>
+                                    <td class="py-3">
+                                        <div id="status-action-1" class="flex flex-col gap-2">
+                                            <span class="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold w-fit">⏳ รอ จป. อนุมัติ</span>
+                                            <div class="flex flex-wrap gap-1.5 safety-action-btns">
+                                                <button onclick="approveDirectly('row-wp-1', 'status-action-1', 'WP-FAC-001', 'approval-card-1')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg cursor-pointer shadow font-semibold">อนุมัติ</button>
+                                                <button onclick="rejectDirectly('row-wp-1', 'approval-card-1')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-lg cursor-pointer shadow font-semibold">ไม่อนุมัติ</button>
+                                            </div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 2: NEW PERMIT FORM -->
+            <div id="tab-new-permit" class="tab-content bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-lg font-bold text-slate-800 border-b pb-3 flex items-center">
+                    <i class="fa-solid fa-file-circle-plus text-blue-600 mr-2"></i> แบบฟอร์มขอใบอนุญาตทำงาน & กำหนดวันหมดอายุ (PTW Standard)
+                </h3>
+                <form id="permit-form" onsubmit="submitForm(event)" class="space-y-4 text-sm">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">ชื่อบริษัทผู้รับเหมาภายนอก (Outsource)</label>
+                            <input type="text" id="req-company" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-blue-600" placeholder="ระบุชื่อบริษัทผู้รับเหมา">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">ประเภทงานอันตราย (PTW Type)</label>
+                            <select id="req-type" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-blue-600">
+                                <option value="งานร้อน (Hot Work - เชื่อม/ตัดโลหะ)">🔥 งานร้อน (Hot Work - เชื่อม/ตัดโลหะ)</option>
+                                <option value="งานในที่อับอากาศ (Confined Space)">🕳️ งานในที่อับอากาศ (Confined Space)</option>
+                                <option value="งานบนที่สูง (Working at Height)">🧗 งานบนที่สูง (Working at Height)</option>
+                                <option value="งานระบบไฟฟ้า (Electrical Work)">⚡ งานระบบไฟฟ้า (Electrical Work)</option>
+                                <option value="งานอันตรายทั่วไป / งานซ่อมบำรุงทั่วไป">⚠️ งานอันตรายทั่วไป / งานซ่อมบำรุงทั่วไป</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">เลือกโซนพื้นที่ปฏิบัติงาน</label>
+                            <select id="req-loc" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-blue-600">
+                                <option value="โซน A: คลังสินค้าและวัตถุดิบ">โซน A: คลังสินค้าและวัตถุดิบ</option>
+                                <option value="โซน B: อาคารผลิต Boiler">โซน B: อาคารผลิต Boiler</option>
+                                <option value="โซน C: สถานีไฟฟ้าย่อย">โซน C: สถานีไฟฟ้าย่อย</option>
+                                <option value="โซน D: หอถังเก็บสารเคมีกลาง">โซน D: หอถังเก็บสารเคมีกลาง</option>
+                                <option value="โซน E: อาคารบำบัดน้ำเสีย">โซน E: อาคารบำบัดน้ำเสีย</option>
+                                <option value="โซน F: พื้นที่ประกอบและแพ็คกิ้ง">โซน F: พื้นที่ประกอบและแพ็คกิ้ง</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">วันที่เริ่ม - วันหมดอายุใบอนุญาต</label>
+                            <input type="text" id="req-time" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-blue-600" placeholder="เช่น 19/11/2026 - 20/11/2026">
+                        </div>
+                        <div>
+                            <label class="block font-medium text-slate-700 mb-1">ช่วงเวลาปฏิบัติงาน</label>
+                            <input type="text" id="req-hours" required value="08:00 - 17:00 น." class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-blue-600">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block font-medium text-slate-700 mb-1">ลักษณะงานซ่อมบำรุง / รายละเอียดกิจกรรม</label>
+                        <input type="text" id="req-desc" required class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-blue-600" placeholder="เช่น ซ่อมแซมท่อส่งลมร้อนและเปลี่ยนวาล์วควบคุม">
+                    </div>
+
+                    <div class="bg-blue-50/60 p-4 rounded-xl border border-blue-200 space-y-3">
+                        <label class="block font-bold text-slate-800"><i class="fa-solid fa-users mr-1.5 text-blue-600"></i> ข้อมูลทีมปฏิบัติงาน & อัปโหลดเอกสารหลักฐาน</label>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">จำนวนคนงานทั้งหมด (คน)</label>
+                                <input type="number" id="req-workers-count" min="1" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="เช่น 4">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">ชื่อผู้ควบคุมงาน / หัวหน้าชุด</label>
+                                <input type="text" id="req-supervisor" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="ระบุชื่อ-นามสกุลหัวหน้าช่าง">
+                            </div>
+                            <div>
+                                <label class="block font-medium text-slate-700 mb-1">เบอร์โทรศัพท์ติดต่อฉุกเฉิน</label>
+                                <input type="text" id="req-phone" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="เช่น 089-123-4567">
+                            </div>
+                        </div>
+                        <div class="pt-2 border-t border-blue-200 space-y-2">
+                            <label class="block font-bold text-slate-700 text-xs flex items-center">
+                                <i class="fa-solid fa-file-arrow-up text-blue-600 mr-1.5 text-sm"></i> อัปโหลดเอกสารประกอบของผู้รับเหมา (ไฟล์ PDF หรือ รูปภาพบัตรประชาชน/ใบรับรองอบรม)
+                            </label>
+                            <input type="file" id="req-files" multiple accept=".pdf,image/*" class="w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer bg-white p-2 rounded-xl border border-slate-200">
+                            <p class="text-[11px] text-slate-500">* ระบบจะจัดเก็บแยกเป็น 2 ไฟล์ PDF ในคลังเอกสาร (ไฟล์ 1: แบบฟอร์มใบอนุญาตทำงานทางการ / ไฟล์ 2: เอกสารหลักฐานที่อัปโหลด)</p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                            <label class="block font-bold text-slate-700">⚙️ เครื่องมือที่ใช้และมาตรการตัดแยกพลังงาน (LOTO)</label>
+                            <div><input type="text" id="req-tools" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="เครื่องมือ/อุปกรณ์: เครื่องเชื่อมไฟฟ้า, ลูกหมู"></div>
+                            <div><input type="text" id="req-loto" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="มาตรการ LOTO: ตัดเบรกเกอร์หลักและติดป้ายห้ามสับสวิตช์"></div>
+                        </div>
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-2">
+                            <label class="block font-bold text-slate-700">🛡️ อุปกรณ์ PPE และจุดรวมพลฉุกเฉิน</label>
+                            <div><input type="text" id="req-ppe" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="PPE: หมวกนิรภัย, หน้ากากเชื่อม, ถุงมือหนัง, รองเท้าเซฟตี้"></div>
+                            <div><input type="text" id="req-emergency" required class="w-full border border-slate-200 rounded-xl p-2 bg-white" placeholder="จุดรวมพลฉุกเฉิน: ลานจอดรถหน้าอาคารสำนักงาน"></div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 flex justify-end space-x-3">
+                        <button type="button" onclick="switchTab('dashboard')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-5 py-2.5 rounded-xl font-medium transition cursor-pointer">ยกเลิก</button>
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-xl font-semibold shadow-md transition cursor-pointer">ส่งคำขอ Work Permit</button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- TAB 3: SAFETY OFFICER APPROVAL -->
+            <div id="tab-approval" class="tab-content bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-lg font-bold text-slate-800 border-b pb-3 flex items-center">
+                    <i class="fa-solid fa-list-check text-blue-600 mr-2"></i> รายการพิจารณาคำขอ Work Permit (สำหรับ จป.วิชาชีพ)
+                </h3>
+                <div id="approval-container" class="space-y-3">
+                    <div class="border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-amber-50/50" id="approval-card-1">
+                        <div>
+                            <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-xs font-bold">WP-FAC-001</span>
+                            <h4 class="font-bold text-slate-800 mt-1">บจก. เอ็นจิเนียริ่ง เซอร์วิส - งานร้อน (Hot Work)</h4>
+                            <p class="text-xs text-slate-600 mt-1">สถานที่: โซน B: อาคารผลิต Boiler | <strong class="text-rose-600">อายุใบอนุญาต: 19/11/2026 - 20/11/2026</strong></p>
+                            <p class="text-xs text-slate-600 mt-1">ทีมงาน: 4 คน (หัวหน้า: นายสมชาย ใจดี) | เครื่องมือ: เครื่องเชื่อมไฟฟ้า</p>
+                            <p class="text-xs text-blue-600 mt-1 font-medium">📁 เอกสารแนบผู้รับเหมา: หลักฐานบัตรประชาชนและใบอบรมความปลอดภัย</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button onclick="openDetailModal('WP-FAC-001')" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow cursor-pointer">ดูรายละเอียด</button>
+                            <button onclick="approveDirectly('row-wp-1', 'status-action-1', 'WP-FAC-001', 'approval-card-1')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl transition shadow cursor-pointer">อนุมัติ</button>
+                            <button onclick="rejectDirectly('row-wp-1', 'approval-card-1')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-2 rounded-xl transition shadow cursor-pointer">ไม่อนุมัติ</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 4: PLANT MAP TRACKING (6 Zones Interactive) -->
+            <div id="tab-tracking" class="tab-content bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+                <h3 class="text-lg font-bold text-slate-800 border-b pb-3 flex items-center">
+                    <i class="fa-solid fa-map-location-dot text-blue-600 mr-2"></i> แผนผังติดตามตำแหน่งงานผู้รับเหมาในโรงงาน (Plant Layout Tracking - 6 Zones)
+                </h3>
+                <div class="bg-slate-900 text-white p-6 rounded-2xl relative overflow-hidden shadow-inner space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs bg-blue-600 px-3 py-1 rounded-full font-medium">🏭 แผนผังจำลอง 6 โซนความปลอดภัยโรงงาน</span>
+                        <span class="text-xs text-emerald-400 animate-pulse"><i class="fa-solid fa-circle text-[8px] mr-1"></i> ระบบติดตามแบบเรียลไทม์ (Live Sync)</span>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs">
+                        <div id="zone-a" class="bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all">
+                            <i class="fa-solid fa-warehouse text-emerald-400 text-xl mb-1"></i>
+                            <div class="font-bold text-slate-200">โซน A: คลังสินค้าและวัตถุดิบ</div>
+                            <div class="text-slate-400 mt-1 status-text">สถานะ: ปกติ (ปลอดภัย)</div>
+                        </div>
+                        <div id="zone-b" class="bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all">
+                            <i class="fa-solid fa-fire text-slate-400 text-xl mb-1"></i>
+                            <div class="font-bold text-slate-200">โซน B: อาคารผลิต Boiler</div>
+                            <div class="text-slate-400 mt-1 status-text">สถานะ: ปกติ (ปลอดภัย)</div>
+                        </div>
+                        <div id="zone-c" class="bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all">
+                            <i class="fa-solid fa-bolt text-emerald-400 text-xl mb-1"></i>
+                            <div class="font-bold text-slate-200">โซน C: สถานีไฟฟ้าย่อย</div>
+                            <div class="text-slate-400 mt-1 status-text">สถานะ: ปกติ (ปลอดภัย)</div>
+                        </div>
+                        <div id="zone-d" class="bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all">
+                            <i class="fa-solid fa-flask text-emerald-400 text-xl mb-1"></i>
+                            <div class="font-bold text-slate-200">โซน D: หอถังเก็บสารเคมีกลาง</div>
+                            <div class="text-slate-400 mt-1 status-text">สถานะ: ปกติ (ปลอดภัย)</div>
+                        </div>
+                        <div id="zone-e" class="bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all">
+                            <i class="fa-solid fa-water text-emerald-400 text-xl mb-1"></i>
+                            <div class="font-bold text-slate-200">โซน E: อาคารบำบัดน้ำเสีย</div>
+                            <div class="text-slate-400 mt-1 status-text">สถานะ: ปกติ (ปลอดภัย)</div>
+                        </div>
+                        <div id="zone-f" class="bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all">
+                            <i class="fa-solid fa-boxes-packing text-emerald-400 text-xl mb-1"></i>
+                            <div class="font-bold text-slate-200">โซน F: พื้นที่ประกอบและแพ็คกิ้ง</div>
+                            <div class="text-slate-400 mt-1 status-text">สถานะ: ปกติ (ปลอดภัย)</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB 5: ARCHIVE (2 PDF Files per Job) -->
+            <div id="tab-archive" class="tab-content bg-white rounded-2xl p-6 shadow-sm border border-slate-200 space-y-4">
+                <div class="flex flex-col md:flex-row md:items-center justify-between border-b pb-3 gap-2">
+                    <h3 class="text-lg font-bold text-slate-800 flex items-center">
+                        <i class="fa-solid fa-box-archive text-blue-600 mr-2"></i> คลังเก็บเอกสารใบอนุญาตย้อนหลัง (Digital Archive)
+                    </h3>
+                    <span class="text-xs text-slate-500 bg-slate-100 px-3 py-1 rounded-full">จัดเก็บแยก 2 ไฟล์ PDF ต่อ 1 งาน (ใบขออนุญาต + เอกสารแนบผู้รับเหมา)</span>
+                </div>
+                <div class="overflow-x-auto pt-2">
+                    <table class="w-full text-left text-sm">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-slate-400 text-xs">
+                                <th class="pb-3 font-semibold">รหัส (ID)</th>
+                                <th class="pb-3 font-semibold">บริษัทผู้รับเหมา / ประเภทงาน</th>
+                                <th class="pb-3 font-semibold">อายุใบอนุญาต</th>
+                                <th class="pb-3 font-semibold">สถานที่ในโรงงาน</th>
+                                <th class="pb-3 font-semibold">ดาวน์โหลดเอกสาร PDF (แยก 2 ไฟล์)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="archive-table-body" class="divide-y divide-slate-100 text-slate-600">
+                            <tr>
+                                <td colspan="5" class="py-4 text-center text-slate-400 text-xs italic">ยังไม่มีเอกสารในคลัง (อนุมัติและกด "จบงาน / คืนพื้นที่" เพื่อบันทึกเข้าคลัง)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Modal แจ้งเหตุฉุกเฉิน -->
+    <div id="emergency-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-lg rounded-2xl p-6 shadow-2xl relative space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-rose-700 flex items-center text-base"><i class="fa-solid fa-triangle-exclamation mr-2 text-xl"></i> แจ้งเหตุฉุกเฉิน / อุบัติเหตุในโรงงาน</h3>
+                <button onclick="closeAlertModal()" class="text-slate-400 hover:text-slate-700 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <form onsubmit="submitEmergencyAlert(event)" class="space-y-3 text-sm">
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">เลือกโซนสถานที่เกิดเหตุ</label>
+                    <select id="emergency-zone" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-rose-600">
+                        <option value="โซน A: คลังสินค้าและวัตถุดิบ">โซน A: คลังสินค้าและวัตถุดิบ</option>
+                        <option value="โซน B: อาคารผลิต Boiler">โซน B: อาคารผลิต Boiler</option>
+                        <option value="โซน C: สถานีไฟฟ้าย่อย">โซน C: สถานีไฟฟ้าย่อย</option>
+                        <option value="โซน D: หอถังเก็บสารเคมีกลาง">โซน D: หอถังเก็บสารเคมีกลาง</option>
+                        <option value="โซน E: อาคารบำบัดน้ำเสีย">โซน E: อาคารบำบัดน้ำเสีย</option>
+                        <option value="โซน F: พื้นที่ประกอบและแพ็คกิ้ง">โซน F: พื้นที่ประกอบและแพ็คกิ้ง</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">ลักษณะเหตุฉุกเฉิน / อุบัติเหตุ</label>
+                    <select id="emergency-type" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-rose-600">
+                        <option value="🔥 เกิดเหตุเพลิงไหม้ / ประกายไฟรุนแรง">🔥 เกิดเหตุเพลิงไหม้ / ประกายไฟรุนแรง</option>
+                        <option value="🧪 สารเคมีรั่วไหล / แก๊สรั่ว">🧪 สารเคมีรั่วไหล / แก๊สรั่ว</option>
+                        <option value="⚡ ไฟฟ้าลัดวงจร / ไฟช็อตคนงาน">⚡ ไฟฟ้าลัดวงจร / ไฟช็อตคนงาน</option>
+                        <option value="🧗 คนงานพลัดตกจากที่สูง / บาดเจ็บ">🧗 คนงานพลัดตกจากที่สูง / บาดเจ็บ</option>
+                        <option value="⚠️ เหตุฉุกเฉิน / อุบัติเหตุอื่นๆ">⚠️ เหตุฉุกเฉิน / อุบัติเหตุอื่นๆ</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block font-medium text-slate-700 mb-1">รายละเอียดเพิ่มเติม / ผู้ประสบเหตุ</label>
+                    <textarea id="emergency-desc" rows="2" class="w-full border border-slate-200 rounded-xl p-2.5 focus:outline-rose-600" placeholder="ระบุรายละเอียด..."></textarea>
+                </div>
+                <div class="pt-2 flex justify-end space-x-2">
+                    <button type="button" onclick="closeAlertModal()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 px-4 py-2 rounded-xl font-medium cursor-pointer">ยกเลิก</button>
+                    <button type="submit" class="bg-rose-600 hover:bg-rose-700 text-white px-5 py-2 rounded-xl font-semibold shadow cursor-pointer">📢 ส่งสัญญาณแจ้งเหตุฉุกเฉิน</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal รายละเอียด & ต่ออายุ Work Permit -->
+    <div id="detail-modal" class="fixed inset-0 bg-black/60 z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-white w-full max-w-2xl rounded-2xl p-6 shadow-2xl relative space-y-4">
+            <div class="flex justify-between items-center border-b pb-3">
+                <h3 class="font-bold text-slate-800 flex items-center"><i class="fa-solid fa-file-shield text-blue-600 mr-2 text-lg"></i> ตรวจสอบรายละเอียด & ต่ออายุ Work Permit</h3>
+                <button onclick="closeDetailModal()" class="text-slate-400 hover:text-slate-700 text-lg cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div id="detail-content-preview" class="bg-slate-50 p-4 rounded-xl border border-slate-200 text-xs space-y-2 text-slate-700 max-h-60 overflow-y-auto"></div>
+            
+            <div class="bg-amber-50 p-4 rounded-xl border border-amber-200 space-y-2">
+                <h4 class="font-bold text-amber-900 text-xs flex items-center"><i class="fa-solid fa-clock-rotate-left mr-1.5"></i> ขอต่ออายุใบอนุญาตทำงาน (Extend Permit)</h4>
+                <div class="flex gap-2 text-xs">
+                    <input type="text" id="extend-date-input" class="flex-1 border border-amber-300 rounded-xl p-2 bg-white" placeholder="ระบุวันหมดอายุใหม่ เช่น 19/11/2026 - 22/11/2026">
+                    <button onclick="extendPermitAction()" class="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-4 py-2 rounded-xl cursor-pointer shadow">ยืนยันต่ออายุ</button>
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button onclick="closeDetailModal()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-4 py-2 rounded-xl cursor-pointer shadow">ปิดหน้าต่าง</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 1: ไฟล์ PDF แบบฟอร์ม Work Permit ทางการ (A4 มาตรฐานใช้งานจริง) -->
+    <div id="permit-pdf-modal" class="fixed inset-0 bg-black/75 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-4xl rounded-2xl p-6 shadow-2xl relative space-y-4 my-8">
+            <div class="flex justify-between items-center border-b pb-3 no-print">
+                <h3 class="font-bold text-slate-800 flex items-center text-base">
+                    <i class="fa-solid fa-file-contract text-blue-700 mr-2 text-xl"></i> ไฟล์ที่ 1: แบบฟอร์มใบอนุญาตทำงานทางการ (Official Work Permit Form)
+                </h3>
+                <button onclick="closePermitPdfModal()" class="text-slate-400 hover:text-slate-700 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- พื้นที่กระดาษ A4 ทางการสำหรับสั่งพิมพ์/บันทึกเป็น PDF -->
+            <div id="permit-a4-scroll" class="max-h-[72vh] overflow-y-auto p-4 bg-slate-200 rounded-xl border border-slate-300">
+                <div id="permit-print-area" class="a4-sheet formal-doc text-slate-900 text-[13px] leading-snug">
+                    
+                    <!-- ส่วนหัวเอกสารทางการ -->
+                    <div class="border-2 border-slate-900">
+                        <div class="grid grid-cols-12 border-b-2 border-slate-900">
+                            <div class="col-span-2 border-r-2 border-slate-900 p-2 flex flex-col items-center justify-center text-center">
+                                <div class="w-11 h-11 rounded-full bg-slate-900 text-white flex items-center justify-center font-bold text-sm tracking-wider">SAFETY</div>
+                                <span class="text-[9px] font-bold mt-1 uppercase">EHS Dept.</span>
+                            </div>
+                            <div class="col-span-7 border-r-2 border-slate-900 p-2.5 flex flex-col justify-center text-center">
+                                <div class="font-bold text-base tracking-wide text-slate-950">ใบอนุญาตเข้าปฏิบัติงานสำหรับผู้รับเหมาและงานซ่อมบำรุง</div>
+                                <div class="font-bold text-xs tracking-wider text-slate-700 uppercase">CONTRACTOR & MAINTENANCE WORK PERMIT FORM</div>
+                                <div class="text-[11px] text-slate-600 mt-0.5">หน่วยงานบริหารความปลอดภัย อาชีวอนามัย และสภาพแวดล้อมในการทำงาน</div>
+                            </div>
+                            <div class="col-span-3 p-2 text-[11px] flex flex-col justify-center space-y-1 bg-slate-50">
+                                <div><strong>รหัสเอกสาร:</strong> FM-EHS-PTW-01</div>
+                                <div><strong>เลขที่ใบอนุญาต:</strong> <span id="doc-wp-id" class="font-bold text-blue-900 underline">WP-FAC-001</span></div>
+                                <div><strong>วันที่ออกเอกสาร:</strong> <span id="doc-issue-date">19/11/2026</span></div>
+                            </div>
+                        </div>
+
+                        <!-- แถบประเภทงานอันตราย -->
+                        <div class="bg-slate-100 border-b-2 border-slate-900 px-3 py-1.5 flex flex-wrap justify-between items-center text-xs">
+                            <div><strong>ประเภทใบอนุญาตงาน (Permit Classification):</strong> <span id="doc-work-type" class="font-bold text-slate-950 underline ml-1">-</span></div>
+                            <div class="font-bold text-emerald-800 border border-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">สถานะ: อนุมัติและปิดงานเรียบร้อย</div>
+                        </div>
+
+                        <!-- ส่วนที่ 1: ข้อมูลผู้รับเหมาและรายละเอียดการปฏิบัติงาน -->
+                        <div class="bg-slate-800 text-white font-bold px-3 py-1 text-xs tracking-wide">
+                            ส่วนที่ 1 : ข้อมูลผู้รับเหมา รายละเอียดงาน และพื้นที่ปฏิบัติงาน (Contractor & Work Details)
+                        </div>
+                        <div class="divide-y divide-slate-400 border-b-2 border-slate-900 text-xs">
+                            <div class="grid grid-cols-12">
+                                <div class="col-span-7 p-2 border-r border-slate-400"><strong>ชื่อบริษัทผู้รับเหมา / หน่วยงาน:</strong> <span id="doc-company" class="ml-1">-</span></div>
+                                <div class="col-span-5 p-2"><strong>จำนวนผู้ปฏิบัติงานทั้งหมด:</strong> <span id="doc-worker-count" class="ml-1">-</span> คน</div>
+                            </div>
+                            <div class="grid grid-cols-12">
+                                <div class="col-span-7 p-2 border-r border-slate-400"><strong>ผู้ควบคุมงาน / หัวหน้าชุดผู้รับเหมา:</strong> <span id="doc-supervisor" class="ml-1">-</span></div>
+                                <div class="col-span-5 p-2"><strong>เบอร์โทรศัพท์ติดต่อฉุกเฉิน:</strong> <span id="doc-phone" class="ml-1">-</span></div>
+                            </div>
+                            <div class="grid grid-cols-12">
+                                <div class="col-span-7 p-2 border-r border-slate-400"><strong>สถานที่ / โซนปฏิบัติงานในโรงงาน:</strong> <span id="doc-location" class="ml-1 font-semibold">-</span></div>
+                                <div class="col-span-5 p-2"><strong>ผู้รับผิดชอบพื้นที่ / จป.:</strong> <span class="ml-1">ณิชาภัทร หมัดพวง</span></div>
+                            </div>
+                            <div class="grid grid-cols-12">
+                                <div class="col-span-7 p-2 border-r border-slate-400"><strong>วันที่อนุญาตให้ปฏิบัติงาน:</strong> <span id="doc-date-range" class="ml-1 font-semibold">-</span></div>
+                                <div class="col-span-5 p-2"><strong>ช่วงเวลาปฏิบัติงาน:</strong> <span id="doc-hours" class="ml-1">08:00 - 17:00 น.</span></div>
+                            </div>
+                            <div class="p-2">
+                                <strong>ลักษณะงานซ่อมบำรุง / ขอบเขตกิจกรรมที่ดำเนินการ:</strong> <span id="doc-description" class="ml-1">-</span>
+                            </div>
+                            <div class="p-2">
+                                <strong>เครื่องจักร เครื่องมือ และอุปกรณ์ไฟฟ้าที่นำเข้าพื้นที่:</strong> <span id="doc-tools" class="ml-1">-</span>
+                            </div>
+                        </div>
+
+                        <!-- ส่วนที่ 2: การตรวจสอบมาตรการความปลอดภัยก่อนเริ่มงาน -->
+                        <div class="bg-slate-800 text-white font-bold px-3 py-1 text-xs tracking-wide">
+                            ส่วนที่ 2 : รายการตรวจสอบความปลอดภัยก่อนเริ่มปฏิบัติงาน (Pre-Work Safety Verification)
+                        </div>
+                        <div class="p-2.5 border-b-2 border-slate-900 space-y-1.5 text-xs">
+                            <div class="grid grid-cols-12 gap-2 items-start">
+                                <div class="col-span-8">1. ผู้ปฏิบัติงานทุกคนผ่านการอบรมความปลอดภัยและตรวจเอกสารยืนยันตัวตนครบถ้วน</div>
+                                <div class="col-span-4 font-bold text-right">[ ☑ ผ่าน ] &nbsp; [ ☐ ไม่ผ่าน ]</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-start border-t border-slate-200 pt-1">
+                                <div class="col-span-8">2. มีการกั้นเขตพื้นที่ปฏิบัติงาน ติดตั้งป้ายเตือนอันตราย และเตรียมถังดับเพลิงประจำจุด</div>
+                                <div class="col-span-4 font-bold text-right">[ ☑ ผ่าน ] &nbsp; [ ☐ ไม่ผ่าน ]</div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-start border-t border-slate-200 pt-1">
+                                <div class="col-span-12">
+                                    <strong>3. มาตรการตัดแยกพลังงานและล็อกกุญแจนิรภัย (LOTO):</strong> <span id="doc-loto" class="underline ml-1">-</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-start border-t border-slate-200 pt-1">
+                                <div class="col-span-12">
+                                    <strong>4. อุปกรณ์คุ้มครองความปลอดภัยส่วนบุคคลที่บังคับใช้ (Mandatory PPE):</strong> <span id="doc-ppe" class="underline ml-1">-</span>
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-12 gap-2 items-start border-t border-slate-200 pt-1">
+                                <div class="col-span-12">
+                                    <strong>5. จุดรวมพลกรณีเกิดเหตุฉุกเฉิน (Emergency Assembly Point):</strong> <span id="doc-emergency" class="underline ml-1">-</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ส่วนที่ 3: ข้อกำหนดและเงื่อนไขความปลอดภัย -->
+                        <div class="bg-slate-800 text-white font-bold px-3 py-1 text-xs tracking-wide">
+                            ส่วนที่ 3 : ข้อกำหนดความปลอดภัยในการปฏิบัติงาน (Safety Regulations & Conditions)
+                        </div>
+                        <div class="p-2.5 border-b-2 border-slate-900 text-[11px] space-y-1 text-slate-800">
+                            <p>1. ผู้รับเหมาต้องปฏิบัติตามกฎระเบียบความปลอดภัยของโรงงานอย่างเคร่งครัด และห้ามปฏิบัติงานนอกเหนือจากขอบเขตที่ระบุในใบอนุญาตนี้</p>
+                            <p>2. กรณีมีการเปลี่ยนแปลงผู้ปฏิบัติงาน เครื่องมือ หรือขยายระยะเวลาทำงาน ต้องยื่นขออนุมัติต่อเจ้าหน้าที่ความปลอดภัยวิชาชีพก่อนดำเนินการ</p>
+                            <p>3. หากเกิดเหตุฉุกเฉิน สภาพการณ์ไม่ปลอดภัย หรือมีผู้ได้รับบาดเจ็บ ต้องหยุดปฏิบัติงานทันทีและแจ้ง จป. หรือศูนย์ควบคุมเหตุฉุกเฉิน</p>
+                            <p>4. เมื่อเสร็จสิ้นการปฏิบัติงานในแต่ละวัน ผู้รับเหมาต้องทำความสะอาด จัดเก็บเครื่องมือ และแจ้งเจ้าหน้าที่ตรวจสอบเพื่อปิดใบอนุญาต</p>
+                        </div>
+
+                        <!-- ส่วนที่ 4: การลงนามอนุมัติและปิดงาน -->
+                        <div class="bg-slate-800 text-white font-bold px-3 py-1 text-xs tracking-wide">
+                            ส่วนที่ 4 : การลงนามขออนุญาต อนุมัติเข้าพื้นที่ และตรวจรับคืนพื้นที่ (Sign-Off & Handover)
+                        </div>
+                        <div class="grid grid-cols-3 divide-x-2 divide-slate-900 border-b-2 border-slate-900 text-center text-xs">
+                            <div class="p-2.5 flex flex-col justify-between min-h-[105px]">
+                                <div class="font-bold">1. ผู้ขออนุญาตปฏิบัติงาน</div>
+                                <div class="my-2 italic text-slate-600 text-[11px]">ลงนามอิเล็กทรอนิกส์แล้ว</div>
+                                <div>
+                                    <div>( <span id="doc-sign-supervisor">หัวหน้าชุดผู้รับเหมา</span> )</div>
+                                    <div class="text-[10px] text-slate-500">ผู้ควบคุมงานผู้รับเหมา</div>
+                                </div>
+                            </div>
+                            <div class="p-2.5 flex flex-col justify-between min-h-[105px]">
+                                <div class="font-bold">2. ผู้อนุมัติความปลอดภัย (จป.)</div>
+                                <div class="my-2 font-bold text-blue-900 text-sm">ณิชาภัทร หมัดพวง</div>
+                                <div>
+                                    <div>( นางสาวณิชาภัทร หมัดพวง )</div>
+                                    <div class="text-[10px] text-slate-500">เจ้าหน้าที่ความปลอดภัยในการทำงานระดับวิชาชีพ</div>
+                                </div>
+                            </div>
+                            <div class="p-2.5 flex flex-col justify-between min-h-[105px]">
+                                <div class="font-bold">3. ตรวจรับคืนพื้นที่เมื่อจบงาน</div>
+                                <div class="my-2 font-bold text-emerald-800 text-xs">✓ พื้นที่ปลอดภัย / ปิดงานแล้ว</div>
+                                <div>
+                                    <div>( นางสาวณิชาภัทร หมัดพวง )</div>
+                                    <div class="text-[10px] text-slate-500">ผู้ตรวจสอบการคืนพื้นที่</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- หมายเหตุท้ายเอกสาร -->
+                        <div class="px-3 py-1.5 bg-slate-50 text-[10px] text-slate-600 flex justify-between">
+                            <span>หมายเหตุ: เอกสารหลักฐานประกอบของผู้รับเหมาถูกจัดเก็บแยกเป็นไฟล์ PDF ชุดที่ 2 ในระบบคลังเอกสาร</span>
+                            <span>ฉบับที่ 1/2569</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex justify-end space-x-3 pt-2 no-print border-t">
+                <button onclick="closePermitPdfModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl cursor-pointer">ปิดหน้าต่าง</button>
+                <button onclick="printElement('permit-print-area')" class="bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold px-5 py-2.5 rounded-xl cursor-pointer shadow flex items-center">
+                    <i class="fa-solid fa-file-pdf mr-1.5"></i> ดาวน์โหลด / บันทึกเป็น PDF (Save as PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL 2: ไฟล์ PDF เอกสารแนบของผู้รับเหมา (แยกต่างหากจากใบ Work Permit) -->
+    <div id="attachment-pdf-modal" class="fixed inset-0 bg-black/75 z-50 hidden flex items-center justify-center p-4 overflow-y-auto">
+        <div class="bg-white w-full max-w-4xl rounded-2xl p-6 shadow-2xl relative space-y-4 my-8">
+            <div class="flex justify-between items-center border-b pb-3 no-print">
+                <h3 class="font-bold text-slate-800 flex items-center text-base">
+                    <i class="fa-solid fa-folder-open text-amber-600 mr-2 text-xl"></i> ไฟล์ที่ 2: เอกสารหลักฐานที่ผู้รับเหมาอัปโหลด (<span id="att-modal-wp-id">WP-FAC-001</span>)
+                </h3>
+                <button onclick="closeAttachmentPdfModal()" class="text-slate-400 hover:text-slate-700 text-xl cursor-pointer"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <!-- รายการไฟล์แนบของงานนี้ -->
+            <div id="attachment-list-container" class="space-y-4 max-h-[70vh] overflow-y-auto p-4 bg-slate-100 rounded-xl border border-slate-200">
+                <!-- เติมรายการไฟล์แนบอัตโนมัติ -->
+            </div>
+
+            <div class="flex justify-end space-x-3 pt-2 no-print border-t">
+                <button onclick="closeAttachmentPdfModal()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold px-4 py-2.5 rounded-xl cursor-pointer">ปิดหน้าต่าง</button>
+                <button id="btn-print-image-attachments" onclick="printElement('attachment-print-area')" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold px-5 py-2.5 rounded-xl cursor-pointer shadow flex items-center">
+                    <i class="fa-solid fa-file-pdf mr-1.5"></i> บันทึกชุดรูปภาพแนบเป็น PDF (Save as PDF)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // URL ของ Google Apps Script Web App (/exec)
+        // ==========================================
+        const GAS_LINE_WEBHOOK_URL = 'https://script.google.com/macros/s/AKfycbyPG3_eRIfRtl_on41b1-I6bFQ68rbO0Fdbl2JvtJ-SKSdVAHEC2sp-wynQfKDVBeEXlg/exec';
+
+        function sendLineNotify(payloadObj) {
+            if (!GAS_LINE_WEBHOOK_URL || GAS_LINE_WEBHOOK_URL.includes('วาง_URL_ของ')) {
+                console.warn('ยังไม่ได้ใส่ URL ของ Google Apps Script');
+                return;
+            }
+            fetch(GAS_LINE_WEBHOOK_URL, {
+                method: 'POST',
+                mode: 'no-cors',
+                headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+                body: JSON.stringify(payloadObj)
+            }).catch(err => console.error('LINE Notify Error:', err));
+        }
+
+        let currentRole = 'Safety Officer';
+        let safetyAlertCount = 0;
+        let selectedWpId = '';
+
+        let zoneActiveContractors = {
+            'zone-a': [], 'zone-b': [], 'zone-c': [], 'zone-d': [], 'zone-e': [], 'zone-f': []
+        };
+
+        let permitDatabase = {
+            'WP-FAC-001': {
+                wpId: 'WP-FAC-001',
+                company: 'บจก. เอ็นจิเนียริ่ง เซอร์วิส',
+                type: 'งานร้อน (Hot Work - เชื่อม/ตัดโลหะ)',
+                locText: 'โซน B: อาคารผลิต Boiler',
+                zoneCode: 'zone-b',
+                timeText: '19/11/2026 - 20/11/2026',
+                hours: '08:00 - 17:00 น.',
+                desc: 'เชื่อมซ่อมแซมท่อไอน้ำและตรวจสอบรอยเชื่อม',
+                workerCount: '4',
+                supervisor: 'นายสมชาย ใจดี',
+                phone: '089-123-4567',
+                tools: 'เครื่องเชื่อมไฟฟ้า, เครื่องเจียรไฟฟ้า, ถังดับเพลิงชนิดผงเคมีแห้ง',
+                loto: 'ตัดเบรกเกอร์จ่ายไฟระบบควบคุมหม้อไอน้ำ และล็อกกุญแจนิรภัยพร้อมป้ายเตือน',
+                ppe: 'หมวกนิรภัย, หน้ากากงานเชื่อม, ถุงมือหนังกันความร้อน, เอี๊ยมหนัง, รองเท้านิรภัย',
+                emergency: 'ลานจอดรถหน้าอาคารสำนักงานใหญ่',
+                issueDate: '19/11/2026',
+                files: [
+                    {
+                        name: 'เอกสารหลักฐานผู้รับเหมา_WP-FAC-001.pdf',
+                        isPdf: false,
+                        url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80'
+                    }
+                ]
+            }
+        };
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            const target = document.getElementById('tab-' + tabId);
+            if(target) target.classList.add('active');
+
+            document.querySelectorAll('aside nav button').forEach(el => {
+                el.classList.remove('text-blue-700', 'bg-blue-50');
+                el.classList.add('text-slate-600');
+            });
+            const activeNav = document.getElementById('nav-' + tabId);
+            if(activeNav) {
+                activeNav.classList.remove('text-slate-600');
+                activeNav.classList.add('text-blue-700', 'bg-blue-50');
+            }
+        }
+
+        function toggleRole() {
+            if(currentRole === 'Safety Officer') {
+                currentRole = 'Contractor';
+                document.getElementById('role-text').innerText = 'Safety';
+                document.getElementById('role-badge').className = "bg-blue-600 text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center shadow-inner";
+                document.getElementById('role-badge').innerHTML = '<i class="fa-solid fa-users-gear mr-1.5"></i><span>ผู้รับเหมา (Contractor): <strong class="underline ml-1">ตัวแทน บจก.</strong></span>';
+                document.querySelectorAll('.safety-only').forEach(el => el.style.display = 'none');
+                document.querySelectorAll('.safety-action-btns').forEach(el => el.style.display = 'none');
+                switchTab('new-permit');
+            } else {
+                currentRole = 'Safety Officer';
+                document.getElementById('role-text').innerText = 'Contractor';
+                document.getElementById('role-badge').className = "bg-emerald-600 text-white px-3 py-1.5 rounded-full text-xs font-medium flex items-center shadow-inner";
+                document.getElementById('role-badge').innerHTML = '<i class="fa-solid fa-user-shield mr-1.5"></i><span>จป.วิชาชีพ (Safety Officer): <strong class="underline ml-1">ณิชาภัทร หมัดพวง</strong></span>';
+                document.querySelectorAll('.safety-only').forEach(el => el.style.display = 'flex');
+                document.querySelectorAll('.safety-action-btns').forEach(el => el.style.display = 'flex');
+                switchTab('dashboard');
+            }
+        }
+
+        function openAlertModal() { document.getElementById('emergency-modal').classList.remove('hidden'); }
+        function closeAlertModal() { document.getElementById('emergency-modal').classList.add('hidden'); }
+
+        let alertCounter = 0;
+
+        function submitEmergencyAlert(event) {
+            event.preventDefault();
+            alertCounter++;
+            const alertId = 'alert-row-' + alertCounter;
+
+            const zone = document.getElementById('emergency-zone').value;
+            const type = document.getElementById('emergency-type').value;
+            const desc = document.getElementById('emergency-desc').value;
+            const nowTime = new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' }) + ' น.';
+
+            safetyAlertCount++;
+            document.getElementById('stat-safety-alert').innerText = safetyAlertCount;
+
+            let zoneCode = 'zone-a';
+            if(zone.includes('โซน A')) zoneCode = 'zone-a';
+            else if(zone.includes('โซน B')) zoneCode = 'zone-b';
+            else if(zone.includes('โซน C')) zoneCode = 'zone-c';
+            else if(zone.includes('โซน D')) zoneCode = 'zone-d';
+            else if(zone.includes('โซน E')) zoneCode = 'zone-e';
+            else if(zone.includes('โซน F')) zoneCode = 'zone-f';
+
+            const zoneEl = document.getElementById(zoneCode);
+            if(zoneEl) {
+                zoneEl.className = "bg-rose-950 border-2 border-rose-600 p-4 rounded-xl relative shadow-xl transition-all animate-pulse";
+                zoneEl.querySelector('.status-text').innerHTML = `<strong class="text-rose-300">🚨 เกิดเหตุ: ${type}</strong>`;
+            }
+
+            const emergencyTbody = document.getElementById('emergency-table-body');
+            if(emergencyTbody.querySelector('tr td[colspan]')) emergencyTbody.innerHTML = '';
+
+            emergencyTbody.insertAdjacentHTML('afterbegin', `
+                <tr id="${alertId}" class="bg-rose-50/50">
+                    <td class="py-3 font-semibold text-slate-800">${nowTime}</td>
+                    <td class="py-3 text-rose-700 font-bold">${zone}</td>
+                    <td class="py-3 font-semibold">${type}</td>
+                    <td class="py-3 text-xs">${desc}</td>
+                    <td class="py-3">
+                        <div class="flex flex-col gap-1.5">
+                            <span class="bg-rose-100 text-rose-800 px-2.5 py-1 rounded-full text-xs font-bold animate-pulse w-fit">🚨 กำลังเข้าช่วยเหลือ</span>
+                            <button onclick="resolveEmergency('${alertId}', '${zoneCode}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] px-3 py-1.5 rounded-lg cursor-pointer shadow font-semibold w-fit">
+                                ✓ ระงับเหตุ / ช่วยเหลือเรียบร้อย
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+
+            // ส่งแจ้งเตือนเข้า LINE OA (ส่วนที่ 2: แจ้งเหตุฉุกเฉิน / อุบัติเหตุ)
+            sendLineNotify({
+                eventType: 'EMERGENCY_ALERT',
+                time: nowTime,
+                zone: zone,
+                emergencyType: type,
+                description: desc
+            });
+
+            alert('🚨 แจ้งเหตุฉุกเฉินสำเร็จ! ระบบเปิดสัญญาณเตือนภัยและส่งแจ้งเตือนเข้า LINE OA เรียบร้อย');
+            closeAlertModal();
+            document.getElementById('emergency-desc').value = '';
+        }
+
+        function resolveEmergency(alertRowId, zoneCode) {
+            alert('✅ ระงับเหตุฉุกเฉินและช่วยเหลือเรียบร้อย! ระบบยกเลิกสัญญาณเตือนภัยแล้ว');
+            const row = document.getElementById(alertRowId);
+            if(row) {
+                row.className = "bg-emerald-50/50";
+                const statusCell = row.querySelector('td:last-child');
+                if(statusCell) {
+                    statusCell.innerHTML = `<span class="bg-emerald-100 text-emerald-800 px-2.5 py-1 rounded-full text-xs font-bold">✅ ระงับเหตุ / ปลอดภัยแล้ว</span>`;
+                }
+            }
+
+            const zoneEl = document.getElementById(zoneCode);
+            if(zoneEl) {
+                if(zoneActiveContractors[zoneCode] && zoneActiveContractors[zoneCode].length > 0) {
+                    zoneEl.className = "bg-blue-950 border-2 border-blue-500 p-4 rounded-xl relative shadow-lg transition-all";
+                    let companyNames = zoneActiveContractors[zoneCode].map(c => c.company).join(', ');
+                    zoneEl.querySelector('.status-text').innerHTML = `<strong class="text-blue-200">กำลังปฏิบัติงาน:</strong> ${companyNames}`;
+                } else {
+                    zoneEl.className = "bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all";
+                    zoneEl.querySelector('.status-text').innerText = "สถานะ: ปกติ (ปลอดภัย)";
+                    zoneEl.querySelector('.status-text').className = "text-slate-400 mt-1 status-text";
+                }
+            }
+        }
+
+        let permitCounter = 1;
+
+        function submitForm(event) {
+            event.preventDefault();
+            permitCounter++;
+            const wpId = 'WP-FAC-' + String(permitCounter).padStart(3, '0');
+            const company = document.getElementById('req-company').value;
+            const type = document.getElementById('req-type').value;
+            const locText = document.getElementById('req-loc').value;
+            const timeText = document.getElementById('req-time').value;
+            const hours = document.getElementById('req-hours').value;
+            const desc = document.getElementById('req-desc').value;
+            
+            let zoneCode = 'zone-a';
+            if(locText.includes('โซน A')) zoneCode = 'zone-a';
+            else if(locText.includes('โซน B')) zoneCode = 'zone-b';
+            else if(locText.includes('โซน C')) zoneCode = 'zone-c';
+            else if(locText.includes('โซน D')) zoneCode = 'zone-d';
+            else if(locText.includes('โซน E')) zoneCode = 'zone-e';
+            else if(locText.includes('โซน F')) zoneCode = 'zone-f';
+
+            const workerCount = document.getElementById('req-workers-count').value;
+            const supervisor = document.getElementById('req-supervisor').value;
+            const phone = document.getElementById('req-phone').value;
+            const tools = document.getElementById('req-tools').value;
+            const loto = document.getElementById('req-loto').value;
+            const ppe = document.getElementById('req-ppe').value;
+            const emergency = document.getElementById('req-emergency').value;
+            const todayStr = new Date().toLocaleDateString('th-TH');
+
+            const fileInput = document.getElementById('req-files');
+            let uploadedFilesArray = [];
+            if(fileInput.files.length > 0) {
+                for(let i = 0; i < fileInput.files.length; i++) {
+                    const f = fileInput.files[i];
+                    const isPdfFile = f.type === 'application/pdf' || f.name.toLowerCase().endsWith('.pdf');
+                    uploadedFilesArray.push({
+                        name: f.name,
+                        isPdf: isPdfFile,
+                        url: URL.createObjectURL(f)
+                    });
+                }
+            } else {
+                uploadedFilesArray.push({
+                    name: 'เอกสารหลักฐานผู้รับเหมา_' + wpId + '.pdf',
+                    isPdf: false,
+                    url: 'https://images.unsplash.com/photo-1544717305-2782549b5136?auto=format&fit=crop&w=800&q=80'
+                });
+            }
+
+            permitDatabase[wpId] = {
+                wpId, company, type, locText, zoneCode, timeText, hours, desc,
+                workerCount, supervisor, phone, tools, loto, ppe, emergency,
+                issueDate: todayStr,
+                files: uploadedFilesArray
+            };
+
+            const tbody = document.getElementById('permit-table-body');
+            const rowId = 'row-wp-' + permitCounter;
+            const actionId = 'status-action-' + permitCounter;
+            const cardId = 'approval-card-' + permitCounter;
+
+            const newRow = document.createElement('tr');
+            newRow.id = rowId;
+            newRow.innerHTML = `
+                <td class="py-3 font-medium text-slate-800">${wpId}</td>
+                <td class="py-3">
+                    <div class="font-semibold text-slate-800">${company}</div>
+                    <span class="bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-xs font-semibold">${type}</span>
+                </td>
+                <td class="py-3 text-xs">${timeText}<br><span class="text-emerald-600">✓ แนบเอกสารแล้ว (${uploadedFilesArray.length} ไฟล์)</span></td>
+                <td class="py-3 text-xs">${locText}</td>
+                <td class="py-3">
+                    <div id="${actionId}" class="flex flex-col gap-2">
+                        <span class="bg-amber-50 text-amber-700 px-2.5 py-1 rounded-full text-xs font-semibold w-fit">⏳ รอ จป. อนุมัติ</span>
+                        <div class="flex flex-wrap gap-1.5 safety-action-btns">
+                            <button onclick="approveDirectly('${rowId}', '${actionId}', '${wpId}', '${cardId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-1.5 rounded-lg cursor-pointer shadow font-semibold">อนุมัติ</button>
+                            <button onclick="rejectDirectly('${rowId}', '${cardId}')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-1.5 rounded-lg cursor-pointer shadow font-semibold">ไม่อนุมัติ</button>
+                        </div>
+                    </div>
+                </td>
+            `;
+            tbody.prepend(newRow);
+
+            const approvalContainer = document.getElementById('approval-container');
+            const newCard = document.createElement('div');
+            newCard.id = cardId;
+            newCard.className = "border border-slate-200 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-amber-50/50";
+            newCard.innerHTML = `
+                <div>
+                    <span class="bg-amber-100 text-amber-800 px-2.5 py-1 rounded-md text-xs font-bold">${wpId}</span>
+                    <h4 class="font-bold text-slate-800 mt-1">${company} - ${type}</h4>
+                    <p class="text-xs text-slate-600 mt-1">สถานที่: ${locText} | <strong class="text-rose-600">อายุใบอนุญาต: ${timeText}</strong></p>
+                    <p class="text-xs text-blue-600 mt-1 font-medium">📁 เอกสารแนบผู้รับเหมา: ${uploadedFilesArray.length} ไฟล์ (จัดเก็บแยกเป็นชุดที่ 2)</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <button onclick="openDetailModal('${wpId}')" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-3 py-2 rounded-xl transition shadow cursor-pointer">ดูรายละเอียด</button>
+                    <button onclick="approveDirectly('${rowId}', '${actionId}', '${wpId}', '${cardId}')" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-3 py-2 rounded-xl transition shadow cursor-pointer">อนุมัติ</button>
+                    <button onclick="rejectDirectly('${rowId}', '${cardId}')" class="bg-rose-600 hover:bg-rose-700 text-white text-xs px-3 py-2 rounded-xl transition shadow cursor-pointer">ไม่อนุมัติ</button>
+                </div>
+            `;
+            approvalContainer.prepend(newCard);
+
+            document.getElementById('badge-count').innerText = parseInt(document.getElementById('badge-count').innerText) + 1;
+            document.getElementById('stat-pending').innerText = parseInt(document.getElementById('stat-pending').innerText) + 1;
+
+            // ส่งแจ้งเตือนเข้า LINE OA (ส่วนที่ 1: มีคำขอ Work Permit ใหม่)
+            sendLineNotify({
+                eventType: 'NEW_PERMIT',
+                wpId: wpId,
+                company: company,
+                workType: type,
+                location: locText,
+                dateRange: timeText,
+                hours: hours,
+                workerCount: workerCount,
+                supervisor: supervisor,
+                phone: phone
+            });
+
+            alert('ส่งคำขอ Work Permit และแจ้งเตือนเข้า LINE OA สำเร็จ!');
+            document.getElementById('permit-form').reset();
+            switchTab('dashboard');
+        }
+
+        function openDetailModal(wpId) {
+            selectedWpId = wpId;
+            const data = permitDatabase[wpId];
+            if(!data) return;
+            const modal = document.getElementById('detail-modal');
+            const preview = document.getElementById('detail-content-preview');
+            preview.innerHTML = `
+                <p><strong>รหัสใบอนุญาต:</strong> ${data.wpId}</p>
+                <p><strong>บริษัท:</strong> ${data.company}</p>
+                <p><strong>ประเภทงาน:</strong> ${data.type}</p>
+                <p><strong>สถานที่:</strong> ${data.locText}</p>
+                <p><strong>อายุใบอนุญาต:</strong> <span class="text-rose-600 font-bold">${data.timeText}</span> (${data.hours})</p>
+                <p><strong>รายละเอียดงาน:</strong> ${data.desc}</p>
+                <p><strong>ทีมงาน:</strong> ${data.workerCount} คน (หัวหน้า: ${data.supervisor} | โทร: ${data.phone})</p>
+                <p><strong>เครื่องมือ/LOTO/PPE:</strong> ${data.tools} | ${data.loto} | ${data.ppe}</p>
+                <p><strong>ไฟล์แนบผู้รับเหมา (${data.files.length} ไฟล์):</strong> ${data.files.map(f => f.name).join(', ')}</p>
+            `;
+            modal.classList.remove('hidden');
+        }
+
+        function closeDetailModal() { document.getElementById('detail-modal').classList.add('hidden'); }
+
+        function extendPermitAction() {
+            const newDate = document.getElementById('extend-date-input').value;
+            if(!newDate) { alert('กรุณาระบุวันหมดอายุใหม่'); return; }
+            if(permitDatabase[selectedWpId]) {
+                permitDatabase[selectedWpId].timeText = newDate;
+            }
+            alert(`✅ ต่ออายุใบอนุญาต ${selectedWpId} สำเร็จ! เป็น: ${newDate}`);
+            closeDetailModal();
+            document.getElementById('extend-date-input').value = '';
+        }
+
+        function approveDirectly(rowId, actionDivId, wpId, cardId) {
+            const data = permitDatabase[wpId];
+            if(!data) return;
+
+            alert('อนุมัติใบอนุญาตทำงานสำเร็จ! อัปเดตแผนผังเรียลไทม์');
+            const card = document.getElementById(cardId);
+            if(card) card.remove();
+
+            if(!zoneActiveContractors[data.zoneCode]) {
+                zoneActiveContractors[data.zoneCode] = [];
+            }
+            zoneActiveContractors[data.zoneCode].push({ wpId: wpId, company: data.company });
+            updateZoneDisplay(data.zoneCode);
+
+            document.getElementById('badge-count').innerText = Math.max(0, parseInt(document.getElementById('badge-count').innerText) - 1);
+            document.getElementById('stat-pending').innerText = Math.max(0, parseInt(document.getElementById('stat-pending').innerText) - 1);
+            document.getElementById('stat-progress').innerText = parseInt(document.getElementById('stat-progress').innerText) + 1;
+
+            const actionDiv = document.getElementById(actionDivId);
+            actionDiv.innerHTML = `
+                <span class="bg-blue-50 text-blue-700 px-2.5 py-1 rounded-full text-xs font-semibold w-fit">⚡ กำลังปฏิบัติงาน</span>
+                <button onclick="closePermit('${actionDivId}', '${wpId}')" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[11px] px-3 py-1.5 rounded-lg cursor-pointer shadow mt-1">
+                    จบงาน / คืนพื้นที่
+                </button>
+            `;
+        }
+
+        function updateZoneDisplay(zoneCode) {
+            const zoneEl = document.getElementById(zoneCode);
+            if(!zoneEl) return;
+
+            const contractors = zoneActiveContractors[zoneCode];
+            const statusTextEl = zoneEl.querySelector('.status-text');
+
+            if(contractors.length > 0) {
+                zoneEl.className = "bg-blue-950 border-2 border-blue-500 p-4 rounded-xl relative shadow-lg transition-all";
+                let companyNames = contractors.map(c => c.company).join(', ');
+                statusTextEl.innerHTML = `<strong class="text-blue-200">กำลังปฏิบัติงาน:</strong> ${companyNames} (${contractors.length} บริษัท)`;
+            } else {
+                zoneEl.className = "bg-slate-800 border border-slate-700 p-4 rounded-xl transition-all";
+                statusTextEl.innerText = "สถานะ: ปกติ (ปลอดภัย)";
+                statusTextEl.className = "text-slate-400 mt-1 status-text";
+            }
+        }
+
+        function closePermit(actionDivId, wpId) {
+            const data = permitDatabase[wpId];
+            if(!data) return;
+
+            alert('ปิดงานและคืนพื้นที่เรียบร้อย ระบบบันทึกเอกสารแยกเป็น 2 ไฟล์ PDF เข้าคลังย้อนหลังแล้ว');
+            
+            if(zoneActiveContractors[data.zoneCode]) {
+                zoneActiveContractors[data.zoneCode] = zoneActiveContractors[data.zoneCode].filter(c => c.wpId !== wpId);
+                updateZoneDisplay(data.zoneCode);
+            }
+
+            document.getElementById('stat-progress').innerText = Math.max(0, parseInt(document.getElementById('stat-progress').innerText) - 1);
+            document.getElementById('stat-completed').innerText = parseInt(document.getElementById('stat-completed').innerText) + 1;
+
+            document.getElementById(actionDivId).innerHTML = `<span class="bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-semibold w-fit">✅ เสร็จสิ้นแล้ว</span>`;
+
+            const archiveTbody = document.getElementById('archive-table-body');
+            if(archiveTbody.querySelector('tr td[colspan]')) archiveTbody.innerHTML = '';
+
+            archiveTbody.insertAdjacentHTML('afterbegin', `
+                <tr>
+                    <td class="py-3 font-medium text-slate-800">${data.wpId}</td>
+                    <td class="py-3">
+                        <div class="font-semibold text-slate-800">${data.company}</div>
+                        <div class="text-xs text-slate-500">${data.type}</div>
+                    </td>
+                    <td class="py-3 text-xs">${data.timeText}</td>
+                    <td class="py-3 text-xs">${data.locText}</td>
+                    <td class="py-3">
+                        <div class="flex flex-wrap gap-2">
+                            <button onclick="openPermitPdfModal('${data.wpId}')" class="bg-blue-50 hover:bg-blue-100 text-blue-800 border border-blue-200 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center">
+                                <i class="fa-solid fa-file-contract mr-1.5"></i> 1. PDF ใบขอ Work Permit
+                            </button>
+                            <button onclick="openAttachmentPdfModal('${data.wpId}')" class="bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 px-3 py-1.5 rounded-xl text-xs font-bold cursor-pointer flex items-center">
+                                <i class="fa-solid fa-file-pdf mr-1.5"></i> 2. PDF เอกสารแนบผู้รับเหมา (${data.files.length})
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+            `);
+        }
+
+        function openPermitPdfModal(wpId) {
+            const data = permitDatabase[wpId];
+            if(!data) return;
+
+            document.getElementById('doc-wp-id').innerText = data.wpId;
+            document.getElementById('doc-issue-date').innerText = data.issueDate;
+            document.getElementById('doc-work-type').innerText = data.type;
+            document.getElementById('doc-company').innerText = data.company;
+            document.getElementById('doc-worker-count').innerText = data.workerCount;
+            document.getElementById('doc-supervisor').innerText = data.supervisor;
+            document.getElementById('doc-phone').innerText = data.phone;
+            document.getElementById('doc-location').innerText = data.locText;
+            document.getElementById('doc-date-range').innerText = data.timeText;
+            document.getElementById('doc-hours').innerText = data.hours;
+            document.getElementById('doc-description').innerText = data.desc;
+            document.getElementById('doc-tools').innerText = data.tools;
+            document.getElementById('doc-loto').innerText = data.loto;
+            document.getElementById('doc-ppe').innerText = data.ppe;
+            document.getElementById('doc-emergency').innerText = data.emergency;
+            document.getElementById('doc-sign-supervisor').innerText = data.supervisor;
+
+            document.getElementById('permit-pdf-modal').classList.remove('hidden');
+        }
+
+        function closePermitPdfModal() {
+            document.getElementById('permit-pdf-modal').classList.add('hidden');
+        }
+
+        function openAttachmentPdfModal(wpId) {
+            const data = permitDatabase[wpId];
+            if(!data) return;
+
+            document.getElementById('att-modal-wp-id').innerText = data.wpId + ' - ' + data.company;
+            const container = document.getElementById('attachment-list-container');
+            container.innerHTML = '';
+
+            let hasImageFiles = false;
+            let imagePagesHtml = '<div id="attachment-print-area" class="space-y-4">';
+
+            data.files.forEach((f, idx) => {
+                if(f.isPdf) {
+                    const pdfCard = document.createElement('div');
+                    pdfCard.className = "bg-white p-4 rounded-xl border border-slate-200 flex flex-col md:flex-row justify-between items-start md:items-center gap-3 shadow-sm";
+                    pdfCard.innerHTML = `
+                        <div class="flex items-center space-x-3">
+                            <div class="bg-rose-100 text-rose-600 p-3 rounded-xl text-xl">
+                                <i class="fa-solid fa-file-pdf"></i>
+                            </div>
+                            <div>
+                                <div class="font-bold text-slate-800 text-sm">ไฟล์ที่ ${idx + 1}: ${f.name}</div>
+                                <div class="text-xs text-slate-500">ไฟล์ PDF ต้นฉบับที่ผู้รับเหมาอัปโหลดเข้าระบบ</div>
+                            </div>
+                        </div>
+                        <div class="flex gap-2">
+                            <a href="${f.url}" target="_blank" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center">
+                                <i class="fa-solid fa-eye mr-1.5"></i> เปิดดูไฟล์ PDF
+                            </a>
+                            <a href="${f.url}" download="${f.name}" class="bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold px-3.5 py-2 rounded-xl flex items-center shadow">
+                                <i class="fa-solid fa-download mr-1.5"></i> ดาวน์โหลด PDF
+                            </a>
+                        </div>
+                    `;
+                    container.appendChild(pdfCard);
+                } else {
+                    hasImageFiles = true;
+                    imagePagesHtml += `
+                        <div class="a4-sheet formal-doc text-slate-900">
+                            <div class="flex justify-between items-center border-b-2 border-slate-800 pb-2 mb-4">
+                                <div>
+                                    <div class="font-bold text-sm">เอกสารหลักฐานประกอบการขออนุญาตทำงาน (Contractor Attachment)</div>
+                                    <div class="text-xs text-slate-600">อ้างอิงใบอนุญาตเลขที่: <strong>${data.wpId}</strong> | บริษัท: <strong>${data.company}</strong></div>
+                                </div>
+                                <div class="text-xs font-bold text-slate-600">เอกสารแนบแผ่นที่ ${idx + 1}</div>
+                            </div>
+                            <div class="text-xs mb-3 text-slate-700"><strong>ชื่อไฟล์หลักฐาน:</strong> ${f.name}</div>
+                            <div class="border border-slate-300 rounded-lg p-3 bg-slate-50 flex items-center justify-center min-h-[210mm]">
+                                <img src="${f.url}" alt="${f.name}" class="max-h-[205mm] max-w-full object-contain">
+                            </div>
+                        </div>
+                    `;
+                }
+            });
+
+            imagePagesHtml += '</div>';
+
+            if(hasImageFiles) {
+                const wrapper = document.createElement('div');
+                wrapper.innerHTML = imagePagesHtml;
+                container.appendChild(wrapper);
+                document.getElementById('btn-print-image-attachments').classList.remove('hidden');
+            } else {
+                document.getElementById('btn-print-image-attachments').classList.add('hidden');
+            }
+
+            document.getElementById('attachment-pdf-modal').classList.remove('hidden');
+        }
+
+        function closeAttachmentPdfModal() {
+            document.getElementById('attachment-pdf-modal').classList.add('hidden');
+        }
+
+        function printElement(elementId) {
+            const targetEl = document.getElementById(elementId);
+            if(!targetEl) return;
+
+            document.querySelectorAll('.print-active').forEach(el => el.classList.remove('print-active'));
+            targetEl.classList.add('print-active');
+
+            window.print();
+
+            setTimeout(() => {
+                targetEl.classList.remove('print-active');
+            }, 500);
+        }
+
+        function rejectDirectly(rowId, cardId) {
+            alert('ปฏิเสธคำขอ');
+            document.getElementById(rowId)?.remove();
+            document.getElementById(cardId)?.remove();
+            document.getElementById('badge-count').innerText = Math.max(0, parseInt(document.getElementById('badge-count').innerText) - 1);
+            document.getElementById('stat-pending').innerText = Math.max(0, parseInt(document.getElementById('stat-pending').innerText) - 1);
+        }
+    </script>
+</body>
+</html>
