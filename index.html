@@ -764,14 +764,21 @@ function loadWpState() {
 
 function saveWpState(extraState = {}) {
   try {
-    const prev = loadWpState() || {};
     const nextState = {
-      ...prev,
       currentRole,
       safetyAlertCount,
       selectedWpId,
       zoneActiveContractors,
       permitDatabase,
+      permitTableHtml: document.getElementById('permit-table-body')?.innerHTML || '',
+      approvalContainerHtml: document.getElementById('approval-container')?.innerHTML || '',
+      emergencyTableHtml: document.getElementById('emergency-table-body')?.innerHTML || '',
+      stats: {
+        badgeCount: document.getElementById('badge-count')?.innerText || '0',
+        statPending: document.getElementById('stat-pending')?.innerText || '0',
+        statActive: document.getElementById('stat-active')?.innerText || '0',
+        statCompleted: document.getElementById('stat-completed')?.innerText || '0'
+      },
       ...extraState
     };
     localStorage.setItem(WP_STORAGE_KEY, JSON.stringify(nextState));
@@ -780,17 +787,44 @@ function saveWpState(extraState = {}) {
   }
 }
 
-(function applySavedWpState() {
+
+function restoreAllHtmlAndStats() {
   const saved = loadWpState();
   if (!saved) return;
+
   if (saved.currentRole) currentRole = saved.currentRole;
-  if (typeof saved.safetyAlertCount === 'number') safetyAlertCount = saved.safetyAlertCount;
+  if (typeof saved.safetyAlertCount === 'number') {
+    safetyAlertCount = saved.safetyAlertCount;
+    const alertStatEl = document.getElementById('stat-safety-alert');
+    if (alertStatEl) alertStatEl.innerText = safetyAlertCount;
+  }
   if (typeof saved.selectedWpId === 'string') selectedWpId = saved.selectedWpId;
   if (saved.zoneActiveContractors) zoneActiveContractors = saved.zoneActiveContractors;
-  if (saved.permitDatabase && Object.keys(saved.permitDatabase).length > 0) {
-    permitDatabase = saved.permitDatabase;
+  if (saved.permitDatabase) permitDatabase = saved.permitDatabase;
+
+  // กู้คืนตารางและตัวเลขบนหน้าจอทั้งหมดจาก HTML ที่บันทึกไว้
+  if (saved.permitTableHtml) {
+    const tbody = document.getElementById('permit-table-body');
+    if (tbody) tbody.innerHTML = saved.permitTableHtml;
   }
-})();
+  if (saved.approvalContainerHtml) {
+    const appBox = document.getElementById('approval-container');
+    if (appBox) appBox.innerHTML = saved.approvalContainerHtml;
+  }
+  if (saved.emergencyTableHtml) {
+    const emTbody = document.getElementById('emergency-table-body');
+    if (emTbody) emTbody.innerHTML = saved.emergencyTableHtml;
+  }
+  if (saved.stats) {
+    if (document.getElementById('badge-count')) document.getElementById('badge-count').innerText = saved.stats.badgeCount;
+    if (document.getElementById('stat-pending')) document.getElementById('stat-pending').innerText = saved.stats.statPending;
+    if (document.getElementById('stat-active')) document.getElementById('stat-active').innerText = saved.stats.statActive;
+    if (document.getElementById('stat-completed')) document.getElementById('stat-completed').innerText = saved.stats.statCompleted;
+  }
+}
+
+window.addEventListener('DOMContentLoaded', restoreAllHtmlAndStats);
+
         function switchTab(tabId) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
             const target = document.getElementById('tab-' + tabId);
